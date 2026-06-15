@@ -16,7 +16,8 @@ let package = Package(
         .library(name: "PrepOSParsing", targets: ["PrepOSParsing"]),
         .library(name: "PrepOSBucketing", targets: ["PrepOSBucketing"]),
         .library(name: "PrepOSPersistence", targets: ["PrepOSPersistence"]),
-        .library(name: "PrepOSIngestion", targets: ["PrepOSIngestion"])
+        .library(name: "PrepOSIngestion", targets: ["PrepOSIngestion"]),
+        .library(name: "PrepOSPipeline", targets: ["PrepOSPipeline"])
     ],
     dependencies: [
         // Persistence layer (Phase 1 P1-b): SQLite via GRDB. Encryption (AES-GCM) is layered
@@ -63,11 +64,19 @@ let package = Package(
             dependencies: ["PrepOSCore", "PrepOSParsing", "PrepOSBucketing"]
         ),
 
+        // Concrete wiring layer: a GRDB-backed IngestionStore + prototype builder that makes
+        // the IngestionCoordinator run against the real database. The app depends on this.
+        .target(
+            name: "PrepOSPipeline",
+            dependencies: ["PrepOSCore", "PrepOSBucketing", "PrepOSPersistence", "PrepOSIngestion"]
+        ),
+
         .testTarget(name: "PrepOSCoreTests", dependencies: ["PrepOSCore"]),
         .testTarget(name: "PrepOSReasoningTests", dependencies: ["PrepOSReasoning"]),
         .testTarget(name: "PrepOSParsingTests", dependencies: ["PrepOSParsing"]),
         .testTarget(name: "PrepOSBucketingTests", dependencies: ["PrepOSBucketing"]),
         .testTarget(name: "PrepOSPersistenceTests", dependencies: ["PrepOSPersistence"]),
-        .testTarget(name: "PrepOSIngestionTests", dependencies: ["PrepOSIngestion"])
+        .testTarget(name: "PrepOSIngestionTests", dependencies: ["PrepOSIngestion"]),
+        .testTarget(name: "PrepOSPipelineTests", dependencies: ["PrepOSPipeline"])
     ]
 )
