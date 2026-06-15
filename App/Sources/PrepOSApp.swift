@@ -6,10 +6,14 @@ import SwiftUI
 /// (scaffold-plan.md §4) that later pieces fill in.
 @main
 struct PrepOSApp: App {
+    @StateObject private var engine = PrepOSEngine()
+
     var body: some Scene {
         WindowGroup {
             RootView()
+                .environmentObject(engine)
                 .frame(minWidth: 900, minHeight: 600)
+                .task { await engine.start() }
         }
         .windowToolbarStyle(.unified)
 

@@ -49,3 +49,11 @@ targets:
         product: PrepOSCore
       - package: PrepOS
         product: PrepOSReasoning
+      - package: PrepOS
+        product: PrepOSBucketing
+      - package: PrepOS
+        product: PrepOSPersistence
+      - package: PrepOS
+        product: PrepOSIngestion
+      - package: PrepOS
+        product: PrepOSPipeline
