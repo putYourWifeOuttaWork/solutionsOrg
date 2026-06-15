@@ -47,11 +47,16 @@ Input: normalized text + embedding. Output is one of:
 ```swift
 public enum FilingDecision: Sendable, Equatable {
     case autoFile(bucketId: UUID, score: Double)
-    case ambiguous(candidates: [Candidate])     // → interrupt (single) or triage (bulk)
-    case proposeNewBucket(suggestedType: BucketType, suggestedName: String)
+    case ambiguous(candidates: [ScoredBucket])  // → interrupt (single) or triage (bulk)
+    case proposeNewBucket(topScore: Double)     // engine attaches LLM type/name suggestion
 }
-public struct Candidate: Sendable, Equatable { public let bucketId: UUID; public let score: Double }
+// One shared shape for a scored candidate; also persisted on TriageItem.candidateBuckets.
+public struct ScoredBucket: Sendable, Codable, Equatable { public var bucketId: UUID; public var score: Double }
 ```
+
+The decision rule is *pure score routing*: `proposeNewBucket` carries only how strong the
+best match was. The suggested type/name for a brand-new bucket comes from an LLM zero-shot
+call in the engine (PRD §8 cold start), not from the pure decider.
 
 Decision rule (single source of truth — unit-test this exhaustively):
 1. `top = max cosine(item, prototype)` over all buckets (centroid+exemplars, take max).

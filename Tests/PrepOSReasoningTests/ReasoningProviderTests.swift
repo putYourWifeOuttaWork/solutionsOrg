@@ -1,5 +1,5 @@
 import XCTest
-@testable import PrepOSKit
+@testable import PrepOSReasoning
 
 final class ReasoningProviderTests: XCTestCase {
 

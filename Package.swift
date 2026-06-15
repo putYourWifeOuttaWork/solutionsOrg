@@ -1,29 +1,42 @@
 // swift-tools-version:5.9
 import PackageDescription
 
-// PrepOSKit — the core logic of PrepOS, built as a Swift Package so it compiles and
-// tests under Command Line Tools alone (no Xcode required). The macOS app bundle
-// (SwiftUI shell, share extension, entitlements) lives in App/ and consumes this package.
+// PrepOS core, split into layered SPM library targets (see docs/architecture.md §2) so
+// independent agents build on separate surfaces without colliding. Everything here compiles
+// and tests under Command Line Tools — no Xcode required. The macOS app bundle (App/) is a
+// separate Xcode target on top, added once Xcode is installed.
 //
-// Dependencies are added per-phase as the PRD requires them (GRDB + sqlite-vec in
-// Phase 1). Phase 0 is intentionally dependency-free so the skeleton builds offline.
+// Targets are added as their pieces land. Dependencies point downward only; PrepOSCore
+// depends on nothing.
 let package = Package(
-    name: "PrepOSKit",
+    name: "PrepOS",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .library(name: "PrepOSKit", targets: ["PrepOSKit"])
+        .library(name: "PrepOSCore", targets: ["PrepOSCore"]),
+        .library(name: "PrepOSReasoning", targets: ["PrepOSReasoning"])
     ],
     dependencies: [],
     targets: [
+        // Domain model, config, pure algorithms. No I/O, no dependencies.
         .target(
-            name: "PrepOSKit",
+            name: "PrepOSCore",
             dependencies: []
         ),
+        // ReasoningProvider abstraction, MCP config, read-only guard.
+        .target(
+            name: "PrepOSReasoning",
+            dependencies: ["PrepOSCore"]
+        ),
+
         .testTarget(
-            name: "PrepOSKitTests",
-            dependencies: ["PrepOSKit"]
+            name: "PrepOSCoreTests",
+            dependencies: ["PrepOSCore"]
+        ),
+        .testTarget(
+            name: "PrepOSReasoningTests",
+            dependencies: ["PrepOSReasoning"]
         )
     ]
 )
