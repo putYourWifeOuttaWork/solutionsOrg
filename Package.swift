@@ -3,11 +3,8 @@ import PackageDescription
 
 // PrepOS core, split into layered SPM library targets (see docs/architecture.md §2) so
 // independent agents build on separate surfaces without colliding. Everything here compiles
-// and tests under Command Line Tools — no Xcode required. The macOS app bundle (App/) is a
-// separate Xcode target on top, added once Xcode is installed.
-//
-// Targets are added as their pieces land. Dependencies point downward only; PrepOSCore
-// depends on nothing.
+// and tests under Command Line Tools / Xcode — the macOS app bundle (App/) consumes these
+// products. Dependencies point downward only; PrepOSCore depends on nothing.
 let package = Package(
     name: "PrepOS",
     platforms: [
@@ -15,11 +12,19 @@ let package = Package(
     ],
     products: [
         .library(name: "PrepOSCore", targets: ["PrepOSCore"]),
-        .library(name: "PrepOSReasoning", targets: ["PrepOSReasoning"])
+        .library(name: "PrepOSReasoning", targets: ["PrepOSReasoning"]),
+        .library(name: "PrepOSParsing", targets: ["PrepOSParsing"]),
+        .library(name: "PrepOSBucketing", targets: ["PrepOSBucketing"]),
+        .library(name: "PrepOSPersistence", targets: ["PrepOSPersistence"])
     ],
-    dependencies: [],
+    dependencies: [
+        // Persistence layer (Phase 1 P1-b): SQLite via GRDB. Encryption (AES-GCM) is layered
+        // on top via CryptoKit + SecretStore; vector similarity is computed in Swift for MVP
+        // (sqlite-vec is a later optimization — see docs/scaffold-plan.md §2).
+        .package(url: "https://github.com/groue/GRDB.swift", from: "7.0.0")
+    ],
     targets: [
-        // Domain model, config, pure algorithms. No I/O, no dependencies.
+        // Domain model, config, pure algorithms, shared protocols. No I/O, no dependencies.
         .target(
             name: "PrepOSCore",
             dependencies: []
@@ -29,14 +34,30 @@ let package = Package(
             name: "PrepOSReasoning",
             dependencies: ["PrepOSCore"]
         ),
-
-        .testTarget(
-            name: "PrepOSCoreTests",
+        // Document parsers: txt/md/vtt/srt/pdf/docx → normalized item text (PRD C1.5).
+        .target(
+            name: "PrepOSParsing",
             dependencies: ["PrepOSCore"]
         ),
-        .testTarget(
-            name: "PrepOSReasoningTests",
-            dependencies: ["PrepOSReasoning"]
-        )
+        // Embedding service, similarity scoring over bucket prototypes, triage routing, and
+        // the bucket relatedness graph (PRD §8, C2, C3).
+        .target(
+            name: "PrepOSBucketing",
+            dependencies: ["PrepOSCore"]
+        ),
+        // GRDB store: records, migrations, AES-GCM encryption, repositories, backup (PRD §6, C8).
+        .target(
+            name: "PrepOSPersistence",
+            dependencies: [
+                "PrepOSCore",
+                .product(name: "GRDB", package: "GRDB.swift")
+            ]
+        ),
+
+        .testTarget(name: "PrepOSCoreTests", dependencies: ["PrepOSCore"]),
+        .testTarget(name: "PrepOSReasoningTests", dependencies: ["PrepOSReasoning"]),
+        .testTarget(name: "PrepOSParsingTests", dependencies: ["PrepOSParsing"]),
+        .testTarget(name: "PrepOSBucketingTests", dependencies: ["PrepOSBucketing"]),
+        .testTarget(name: "PrepOSPersistenceTests", dependencies: ["PrepOSPersistence"])
     ]
 )
