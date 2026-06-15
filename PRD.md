@@ -366,10 +366,10 @@ Generation runs through the `ReasoningProvider` (Claude + Altify read MCP + web_
 > Phase gates are mandatory: do not start a phase until the prior phase's acceptance criteria pass. `[P]` marks tasks that can run in parallel. Each phase is TDD where practical (write the test, then the implementation).
 
 ### Phase 0 — Spec & guardrails
-- [ ] T0.1 Create `AGENTS.md` / `CLAUDE.md` encoding the Constitution (§12) as standing MUST/MUST-NOT rules.
-- [ ] T0.2 Stand up the Swift package/app skeleton, sandbox + hardened runtime entitlements, CI lint/test.
-- [ ] T0.3 [P] Define the `ReasoningProvider` protocol and a no-op stub.
-- **Gate:** App launches empty; Constitution file present; CI green.
+- [x] T0.1 Create `AGENTS.md` / `CLAUDE.md` encoding the Constitution (§12) as standing MUST/MUST-NOT rules. → [CLAUDE.md](CLAUDE.md)
+- [~] T0.2 Stand up the Swift package/app skeleton, sandbox + hardened runtime entitlements, CI lint/test. → Swift package + CI done ([Package.swift](Package.swift), [.github/workflows/ci.yml](.github/workflows/ci.yml)). **App target + entitlements deferred — full Xcode not installed on dev machine (only Command Line Tools).**
+- [x] T0.3 [P] Define the `ReasoningProvider` protocol and a no-op stub. → [ReasoningProvider.swift](Sources/PrepOSKit/Reasoning/ReasoningProvider.swift)
+- **Gate:** App launches empty; Constitution file present; CI green. *(Package builds + read-only guard verified locally; app-launch gate pending Xcode.)*
 
 ### Phase 1 — Local core (no calendar, no Claude)
 - [ ] T1.1 GRDB schema + migrations for all entities (§6); integrate sqlite-vec; AES-GCM encryption with Keychain key (C8.1).

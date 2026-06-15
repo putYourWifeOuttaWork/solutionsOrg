@@ -1,0 +1,26 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+*.xcuserstate
+
+# macOS
+.DS_Store
+
+# Secrets — NEVER commit. All secrets live in the Keychain (see CLAUDE.md §1).
+*.env
+.env*
+secrets.json
+*.p8
+*.p12
+
+# Local databases / exports
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.prepos
