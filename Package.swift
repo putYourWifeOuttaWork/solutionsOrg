@@ -15,7 +15,8 @@ let package = Package(
         .library(name: "PrepOSReasoning", targets: ["PrepOSReasoning"]),
         .library(name: "PrepOSParsing", targets: ["PrepOSParsing"]),
         .library(name: "PrepOSBucketing", targets: ["PrepOSBucketing"]),
-        .library(name: "PrepOSPersistence", targets: ["PrepOSPersistence"])
+        .library(name: "PrepOSPersistence", targets: ["PrepOSPersistence"]),
+        .library(name: "PrepOSIngestion", targets: ["PrepOSIngestion"])
     ],
     dependencies: [
         // Persistence layer (Phase 1 P1-b): SQLite via GRDB. Encryption (AES-GCM) is layered
@@ -54,10 +55,19 @@ let package = Package(
             ]
         ),
 
+        // Capture→file ingestion coordinator: parse → embed → decide → persist, with the
+        // single-vs-bulk interrupt/triage routing (PRD C1.6, C2). Persistence is injected via
+        // the IngestionStore protocol so the pipeline is testable without a database.
+        .target(
+            name: "PrepOSIngestion",
+            dependencies: ["PrepOSCore", "PrepOSParsing", "PrepOSBucketing"]
+        ),
+
         .testTarget(name: "PrepOSCoreTests", dependencies: ["PrepOSCore"]),
         .testTarget(name: "PrepOSReasoningTests", dependencies: ["PrepOSReasoning"]),
         .testTarget(name: "PrepOSParsingTests", dependencies: ["PrepOSParsing"]),
         .testTarget(name: "PrepOSBucketingTests", dependencies: ["PrepOSBucketing"]),
-        .testTarget(name: "PrepOSPersistenceTests", dependencies: ["PrepOSPersistence"])
+        .testTarget(name: "PrepOSPersistenceTests", dependencies: ["PrepOSPersistence"]),
+        .testTarget(name: "PrepOSIngestionTests", dependencies: ["PrepOSIngestion"])
     ]
 )
