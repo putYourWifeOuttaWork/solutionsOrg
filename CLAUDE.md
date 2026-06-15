@@ -100,10 +100,8 @@ These work with **Command Line Tools** alone — no Xcode required. CI runs both
 
 ## 4. Toolchain
 
-**Xcode 26.5 is installed** (`/Applications/Xcode.app`). If `xcode-select -p` still points
-at the Command Line Tools, prefix Xcode-dependent commands with
-`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` (no `sudo` needed), or make it
-permanent with `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`.
+**Xcode 26.5 is the active toolchain** (`xcode-select -p` → `/Applications/Xcode.app`,
+Swift 6.3.2). No `DEVELOPER_DIR` prefix needed.
 
 - ✅ `swift build` and `swift test` both run locally (all package tests green).
 - ✅ The macOS **app bundle** builds: `cd App && xcodegen generate && xcodebuild -project
@@ -153,7 +151,7 @@ SPM targets or git worktrees** to avoid file collisions.
 ## 6. Phase status
 
 - [x] **Phase 0** — Spec & guardrails (CLAUDE.md, package skeleton, `ReasoningProvider`)
-- [ ] **Phase 1** — Local core (GRDB schema, capture, parsers, embeddings, bucketing)
+- [~] **Phase 1** — Local core. Package layer DONE (persistence+encryption, parsers, embedding, bucketing engine, graph; 114 tests). Pending: capture surfaces + triage UI (app, T1.2/T1.6) and ingestion-coordinator wiring → then the real-data gate.
 - [ ] **Phase 2** — AI layer (Claude provider, Altify read MCP, web_search, agentic chat)
 - [ ] **Phase 3** — Calendar fusion & proactive prep (Graph, digests, cockpit)
 - [ ] **Phase 4** — Agentic asset building

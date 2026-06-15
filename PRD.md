@@ -372,15 +372,15 @@ Generation runs through the `ReasoningProvider` (Claude + Altify read MCP + web_
 - **Gate:** App launches empty ✅; Constitution file present ✅; CI green ✅ (package). *(App build verified locally; app build in CI is a follow-up.)*
 
 ### Phase 1 — Local core (no calendar, no Claude)
-- [ ] T1.1 GRDB schema + migrations for all entities (§6); integrate sqlite-vec; AES-GCM encryption with Keychain key (C8.1).
-- [ ] T1.2 [P] Capture surfaces: drag-drop, paste, global hotkey, share extension, watched folder (C1).
-- [ ] T1.3 [P] Parsers for txt/md/vtt/srt/pdf/docx (C1.5).
-- [ ] T1.4 Local embedding service via `NLContextualEmbedding` (C1.6).
-- [ ] T1.5 Bucketing engine: similarity scoring, double-threshold + margin, single-vs-bulk routing, new-bucket proposal, prototype learning (C2, §8).
-- [ ] T1.6 [P] Needs-Sorting triage inbox UI + on-the-spot bucket-picker.
-- [ ] T1.7 [P] Bucket CRUD + BucketLink graph (manual links) (C3.1, C3.3).
-- [ ] T1.8 Encrypted export/backup (C8.4).
-- **Gate (calibrate on real data):** ≥ ~80% of clearly-belonging items auto-file correctly; ambiguous items reliably reach the right place (interrupt for singles, queue for bulk); zero plaintext secrets; backup restores cleanly.
+- [x] T1.1 GRDB schema + migrations for all entities (§6); AES-GCM encryption with Keychain key (C8.1). → `PrepOSPersistence` (Schema/Records/Repositories/EncryptedDatabase). *(sqlite-vec deferred — vectors stored as BLOB, similarity in Swift; see scaffold-plan §2.)*
+- [ ] T1.2 [P] Capture surfaces: drag-drop, paste, global hotkey, share extension, watched folder (C1). *(app/UI — pending)*
+- [x] T1.3 [P] Parsers for txt/md/vtt/srt/pdf/docx (C1.5). → `PrepOSParsing`.
+- [x] T1.4 Local embedding service via `NLContextualEmbedding` (C1.6). → `PrepOSBucketing` (`EmbeddingService` + NL impl + deterministic fake).
+- [x] T1.5 Bucketing engine: similarity scoring, double-threshold + margin, new-bucket proposal, prototype learning (C2, §8). → `PrepOSBucketing` (PrototypeIndex → FilingDecider). *(single-vs-bulk routing is the ingestion coordinator — wired with capture, T1.2.)*
+- [ ] T1.6 [P] Needs-Sorting triage inbox UI + on-the-spot bucket-picker. *(app/UI — pending)*
+- [~] T1.7 [P] Bucket CRUD + BucketLink graph (manual links) (C3.1, C3.3). → repositories + `BucketGraph` traversal done; manual-link UI pending.
+- [x] T1.8 Encrypted export/backup (C8.4). → `EncryptedDatabase.exportEncrypted`.
+- **Gate (calibrate on real data):** ≥ ~80% of clearly-belonging items auto-file correctly; ambiguous items reliably reach the right place (interrupt for singles, queue for bulk); zero plaintext secrets; backup restores cleanly. *(Engine + storage built & tested (114 tests); gate pends the capture/ingestion wiring + real-data calibration.)*
 
 ### Phase 2 — AI layer (Claude + Altify read)
 - [ ] T2.1 Implement Claude `ReasoningProvider` (Keychain key, model config, block-type-aware response handling) (§11).
