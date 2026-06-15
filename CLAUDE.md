@@ -98,17 +98,20 @@ These work with **Command Line Tools** alone — no Xcode required. CI runs both
 
 ---
 
-## 4. Known environment constraint
+## 4. Toolchain
 
-Full **Xcode** is being installed (`xcodes install 26.5`). Until it is active:
-- ✅ The package targets build and test via `swift`/CLT.
-- ⛔ The SwiftUI **app bundle**, **share extension**, **entitlements**, and on-device
-  frameworks that need an app context cannot compile. Scaffold them so they are ready, but
-  do not claim they build. Isolate app-only framework use behind protocols in the package
-  so logic stays testable without Xcode.
-- ⚠️ `swift test` cannot run locally without Xcode (XCTest is unavailable under CLT). It
-  runs in CI on the `macos-14` runner. For local verification under CLT, compile a tiny
-  `main.swift` driver against the sources (see git history of Phase 0 for the pattern).
+**Xcode 26.5 is installed** (`/Applications/Xcode.app`). If `xcode-select -p` still points
+at the Command Line Tools, prefix Xcode-dependent commands with
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` (no `sudo` needed), or make it
+permanent with `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`.
+
+- ✅ `swift build` and `swift test` both run locally (all package tests green).
+- ✅ The macOS **app bundle** builds: `cd App && xcodegen generate && xcodebuild -project
+  PrepOS.xcodeproj -scheme PrepOSApp -destination 'platform=macOS' build CODE_SIGNING_ALLOWED=NO`.
+- The Xcode project is **generated from `App/project.yml` via XcodeGen** (the `.xcodeproj`
+  and `.entitlements` are gitignored derived artifacts). Edit `project.yml`, not the project.
+- Keep app-only framework use (AppKit, share extension, `NaturalLanguage`, Keychain) behind
+  protocols in the package so the core stays testable in isolation.
 
 ---
 

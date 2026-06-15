@@ -1,0 +1,51 @@
+# XcodeGen spec for the PrepOS macOS app. The .xcodeproj is generated from this file
+# (`cd App && xcodegen generate`) so the project stays diffable and regenerable — no binary
+# .pbxproj to merge-conflict. See docs/scaffold-plan.md §4-5.
+name: PrepOS
+options:
+  bundleIdPrefix: dev.altify.prepos
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+# The local Swift package at the repo root holds all the testable core logic.
+packages:
+  PrepOS:
+    path: ..
+
+targets:
+  PrepOSApp:
+    type: application
+    platform: macOS
+    sources:
+      - Sources
+    entitlements:
+      path: PrepOSApp.entitlements
+      properties:
+        # Least privilege (Security Constitution §7 / docs/security-constitution.md):
+        com.apple.security.app-sandbox: true
+        # Outgoing TLS to Claude / Microsoft Graph / Altify MCP.
+        com.apple.security.network.client: true
+        # Importing dropped/shared/watched files and saving generated assets.
+        com.apple.security.files.user-selected.read-write: true
+        # NO microphone, camera, or broad filesystem entitlements — see the Constitution.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.altify.prepos.app
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "5.9"
+        ENABLE_HARDENED_RUNTIME: YES
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        # Local dev: ad-hoc sign so the sandbox/hardened-runtime entitlements apply
+        # without a provisioning team.
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "-"
+        DEVELOPMENT_TEAM: ""
+    dependencies:
+      - package: PrepOS
+        product: PrepOSCore
+      - package: PrepOS
+        product: PrepOSReasoning

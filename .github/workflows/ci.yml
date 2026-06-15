@@ -21,3 +21,20 @@ jobs:
 
       - name: Test
         run: swift test
+
+  build-app:
+    name: Build macOS app shell
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate project
+        run: cd App && xcodegen generate
+
+      - name: Build app
+        run: |
+          cd App && xcodebuild -project PrepOS.xcodeproj -scheme PrepOSApp \
+            -destination 'platform=macOS' build CODE_SIGNING_ALLOWED=NO

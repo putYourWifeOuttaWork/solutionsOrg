@@ -9,6 +9,11 @@ Package.resolved
 DerivedData/
 *.xcuserstate
 
+# XcodeGen-generated artifacts — project.yml is the single source of truth.
+# Regenerate with `cd App && xcodegen generate`.
+App/PrepOS.xcodeproj/
+App/PrepOSApp.entitlements
+
 # macOS
 .DS_Store
 
