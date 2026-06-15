@@ -1,17 +1,30 @@
-# CLAUDE.md — PrepOS engineering constitution & working notes
+# CLAUDE.md — PrepOS engineering constitution & orchestration charter
 
 This file is loaded into context every session. It is the **standing law** for building
 PrepOS. [PRD.md](PRD.md) is the source of truth for *intent*; this file is the source of
-truth for *how we build and what we must never do*.
+truth for *how we build, what we must never do, and how the agents coordinate*.
 
-If a task appears to require anything forbidden below, **STOP and surface it as an open
+If a task appears to require anything forbidden in §1, **STOP and surface it as an open
 question** rather than building it.
+
+**Document map**
+| Doc | Purpose |
+|---|---|
+| [PRD.md](PRD.md) | Product spec — intent, scope, requirements (EARS), phase plan |
+| **CLAUDE.md** (this) | Standing rules, stack, orchestration charter |
+| [docs/architecture.md](docs/architecture.md) | System & module/target architecture |
+| [docs/design.md](docs/design.md) | Detailed design: data model, engines, protocols |
+| [docs/orchestrator.md](docs/orchestrator.md) | The build-loop playbook & agent roster |
+| [docs/testing-strategy.md](docs/testing-strategy.md) | TDD, CI, acceptance gates |
+| [docs/security-constitution.md](docs/security-constitution.md) | Constitution → engineering checklist |
+| [docs/scaffold-plan.md](docs/scaffold-plan.md) | Step-by-step app scaffold plan |
 
 ---
 
 ## 1. The Security & Privacy Constitution (inviolable — PRD §12)
 
-Treat any conflict with these as a **hard stop**.
+Treat any conflict with these as a **hard stop**. Full engineering detail in
+[docs/security-constitution.md](docs/security-constitution.md).
 
 **MUST**
 - Store every secret (Anthropic API key, Microsoft Graph tokens, Altify MCP credentials)
@@ -37,12 +50,12 @@ Treat any conflict with these as a **hard stop**.
 ### Read-only enforcement — belt & suspenders (PRD §11)
 1. The Write connector URL is **absent** from all configuration.
 2. The provider layer **rejects** any tool name matching write/upsert/create/update/
-   delete patterns before dispatch.
+   delete patterns before dispatch (`ReadOnlyGuard`).
 3. The cockpit shows the user every record touched.
 
 ---
 
-## 2. Architecture (decided — PRD §5)
+## 2. Architecture (decided — PRD §5; detail in docs/architecture.md)
 
 | Layer | Choice |
 |---|---|
@@ -57,61 +70,80 @@ Treat any conflict with these as a **hard stop**.
 
 All Claude calls go through the `ReasoningProvider` protocol so the backend is swappable.
 
-### Repo layout
+### Target / module layout (scaffold target — see docs/scaffold-plan.md)
+The core splits into focused SPM library targets so agents work on independent surfaces
+without colliding. The macOS app bundle is a separate Xcode target on top.
 ```
-PRD.md                     Source of truth for intent
-CLAUDE.md                  This file — standing rules
-Package.swift              Swift Package (core logic — builds under CLT, no Xcode needed)
-Sources/PrepOSKit/         Core library: domain model, reasoning, bucketing, parsers, …
-Tests/PrepOSKitTests/      Unit tests (swift test)
-App/                       (Phase 0+) SwiftUI app target — REQUIRES Xcode to build
-.github/workflows/ci.yml   CI: swift build + swift test
+PrepOSCore          domain model, errors, config              (no deps)
+PrepOSPersistence   GRDB store, encryption, sqlite-vec         → Core
+PrepOSReasoning     ReasoningProvider, MCP, ReadOnlyGuard      → Core
+PrepOSBucketing     embedding, scoring, triage, graph          → Core, Persistence
+PrepOSIntegrations  Microsoft Graph / calendar                 → Core
+PrepOSPrep          brief & digest composition                 → all of the above
+PrepOSApp (Xcode)   SwiftUI shell, share extension, entitlements → all
 ```
-
-The core logic lives in the **`PrepOSKit` Swift Package** and is fully testable from the
-command line. The macOS **app bundle** (SwiftUI shell, share extension, entitlements)
-requires **full Xcode** — see §4.
+Until the scaffold runs, all code lives in the single `PrepOSKit` target.
 
 ---
 
 ## 3. Build & test
 
 ```bash
-swift build            # compile the core library
+swift build            # compile the core library/targets
 swift test             # run the unit tests
 ```
 
 These work with **Command Line Tools** alone — no Xcode required. CI runs both on every push.
-
 **Before committing:** `swift build && swift test` must pass.
 
 ---
 
 ## 4. Known environment constraint
 
-Full **Xcode is not installed** on the dev machine (only Command Line Tools, Swift 5.10).
-Consequences:
-- ✅ The `PrepOSKit` package builds and tests via `swift`/CLT today.
-- ⛔ The SwiftUI **app bundle**, **share extension**, **sandbox/hardened-runtime
-  entitlements**, and on-device frameworks that need an app context cannot be compiled
-  until Xcode is installed. Scaffold them so they are ready, but do not claim they build.
-
-When code depends on app-only frameworks, isolate it behind protocols in `PrepOSKit` so the
-logic stays testable without Xcode.
+Full **Xcode** is being installed (`xcodes install 26.5`). Until it is active:
+- ✅ The package targets build and test via `swift`/CLT.
+- ⛔ The SwiftUI **app bundle**, **share extension**, **entitlements**, and on-device
+  frameworks that need an app context cannot compile. Scaffold them so they are ready, but
+  do not claim they build. Isolate app-only framework use behind protocols in the package
+  so logic stays testable without Xcode.
+- ⚠️ `swift test` cannot run locally without Xcode (XCTest is unavailable under CLT). It
+  runs in CI on the `macos-14` runner. For local verification under CLT, compile a tiny
+  `main.swift` driver against the sources (see git history of Phase 0 for the pattern).
 
 ---
 
-## 5. Working agreement
+## 5. Orchestration charter (how the agents build this)
 
-- **TDD where practical**: write the test, then the implementation (PRD §13).
-- **Phase gates are mandatory**: do not start a phase until the prior phase's acceptance
-  criteria pass. Track progress against the PRD §13 task IDs (T0.1, T1.1, …).
-- **Keep this repo up to date as we build**: commit working increments with clear messages;
-  update this file and the PRD checklist as tasks complete.
-- `[P]` tasks in the PRD may be parallelized.
-- UUID primary keys everywhere; bucket IDs are stable (never reused) so renames/merges
-  preserve history.
+PrepOS is built by a roster of specialized subagents coordinated by an **orchestrator**.
+Full playbook: [docs/orchestrator.md](docs/orchestrator.md). The core loop:
+
+```
+orchestrator decomposes a phase into independent PIECES
+  └─ for each piece:
+       architect  → writes/updates the piece's design note
+       builder    → implements it TDD-first (test, then code)
+       /simplify  → builder runs the simplify skill on the new code
+       qa-engineer→ verifies acceptance criteria + runs tests; files defects
+       (loop builder ⇄ qa-engineer until the piece passes QA)
+       security-auditor → Constitution gate (read-only, Keychain, encryption)
+  orchestrator reviews the piece vs the PRD acceptance criteria → success | redo
+  (recurse until every piece in the phase is done → phase gate)
+```
+
+**Realization in this harness:** the orchestrator is the main session (or a `Workflow`
+script) driving the `Agent` tool. Subagents cannot spawn subagents, so fan-out and the
+build⇄QA recursion are owned by the orchestrator layer. Parallel builders use **separate
+SPM targets or git worktrees** to avoid file collisions.
+
+**Standing rules for every agent:**
+- Obey §1 without exception. The `security-auditor` has veto power.
+- TDD where practical; `swift build && swift test` green before declaring a piece done.
+- A "new piece" finished by a builder MUST be followed by `/simplify`, then QA — recurse
+  until QA passes. Do not skip the loop.
+- Keep this repo up to date: commit working increments with clear messages; update the
+  §6 phase checklist and the PRD §13 task boxes as gates pass.
 - Process Claude response content blocks **by `type`**, never by position.
+- UUID primary keys everywhere; bucket IDs are stable (never reused).
 
 ---
 
