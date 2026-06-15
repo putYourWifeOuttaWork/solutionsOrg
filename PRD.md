@@ -373,11 +373,11 @@ Generation runs through the `ReasoningProvider` (Claude + Altify read MCP + web_
 
 ### Phase 1 — Local core (no calendar, no Claude)
 - [x] T1.1 GRDB schema + migrations for all entities (§6); AES-GCM encryption with Keychain key (C8.1). → `PrepOSPersistence` (Schema/Records/Repositories/EncryptedDatabase). *(sqlite-vec deferred — vectors stored as BLOB, similarity in Swift; see scaffold-plan §2.)*
-- [ ] T1.2 [P] Capture surfaces: drag-drop, paste, global hotkey, share extension, watched folder (C1). *(app/UI — pending)*
+- [~] T1.2 [P] Capture surfaces: drag-drop, paste, global hotkey, share extension, watched folder (C1). → drag-drop + paste/quick-capture done in the app; global hotkey, share extension, watched folder pending.
 - [x] T1.3 [P] Parsers for txt/md/vtt/srt/pdf/docx (C1.5). → `PrepOSParsing`.
 - [x] T1.4 Local embedding service via `NLContextualEmbedding` (C1.6). → `PrepOSBucketing` (`EmbeddingService` + NL impl + deterministic fake).
 - [x] T1.5 Bucketing engine: similarity scoring, double-threshold + margin, new-bucket proposal, prototype learning (C2, §8). → `PrepOSBucketing` (PrototypeIndex → FilingDecider). *(single-vs-bulk routing is the ingestion coordinator — wired with capture, T1.2.)*
-- [ ] T1.6 [P] Needs-Sorting triage inbox UI + on-the-spot bucket-picker. *(app/UI — pending)*
+- [x] T1.6 [P] Needs-Sorting triage inbox UI + on-the-spot bucket-picker. → file to a suggested bucket or create-and-file a new one.
 - [~] T1.7 [P] Bucket CRUD + BucketLink graph (manual links) (C3.1, C3.3). → repositories + `BucketGraph` traversal done; manual-link UI pending.
 - [x] T1.8 Encrypted export/backup (C8.4). → `EncryptedDatabase.exportEncrypted`.
 - **Gate (calibrate on real data):** ≥ ~80% of clearly-belonging items auto-file correctly; ambiguous items reliably reach the right place (interrupt for singles, queue for bulk); zero plaintext secrets; backup restores cleanly. *(Engine + storage built & tested (114 tests); gate pends the capture/ingestion wiring + real-data calibration.)*
